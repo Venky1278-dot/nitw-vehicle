@@ -1,0 +1,23 @@
+# Render Blueprint: creates a public HTTPS web service from this repository.
+# Keep this file at the repository root (next to the backend/ and frontend/ folders).
+services:
+  - type: web
+    name: nitw-vehicle-console
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: DEMO_USERNAME
+        value: operator
+      - key: DEMO_PASSWORD
+        sync: false            # Render asks you for this when you create the service
+      - key: DEMO_SHOW_CREDENTIALS
+        value: "false"         # never pre-fill the password on a public site
+      - key: VEHICLE_LINK_SECRET
+        generateValue: true
+      - key: SESSION_IDLE_SECONDS
+        value: "300"

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e1319">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NITW Vehicle">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <title>NITW Vehicle Console</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Sign-in -->
+  <div id="login" class="login">
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <h1>NITW Vehicle Console</h1>
+      <p class="muted">Sign in to monitor and command the campus vehicle.</p>
+      <label>Username <input id="loginUser" name="username" autocomplete="username" required></label>
+      <label>Password <input id="loginPass" name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p id="loginError" class="error" role="alert"></p>
+      <p id="demoHint" class="muted small" hidden></p>
+    </form>
+  </div>
+
+  <!-- Console -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand">NITW Vehicle Console</div>
+      <div class="top-right">
+        <div class="link" id="linkStatus"><span class="dot"></span><span id="linkText">Connecting</span></div>
+        <button id="signOutBtn" class="btn tiny" type="button">Sign out</button>
+      </div>
+    </header>
+    <div id="idleBanner" class="idle-banner" role="alert" hidden>
+      <span id="idleText"></span>
+      <button id="stayBtn" class="btn tiny" type="button">Stay signed in</button>
+    </div>
+
+    <main class="layout">
+      <section class="mapwrap">
+        <div id="map" aria-label="Campus map"></div>
+        <button id="followBtn" class="btn map-btn" aria-pressed="true">Following vehicle</button>
+      </section>
+
+      <aside class="panel">
+        <!-- Mode -->
+        <section class="block">
+          <h2>Mode</h2>
+          <div class="segmented" role="group" aria-label="Operating mode">
+            <button data-mode="autonomous" class="seg active">Autonomous</button>
+            <button data-mode="calibration" class="seg">Calibration</button>
+            <button data-mode="manual" class="seg">Manual</button>
+          </div>
+          <p id="modeNote" class="muted small"></p>
+        </section>
+
+        <!-- Autonomous controls -->
+        <section class="block" id="autoBlock">
+          <h2>Destination</h2>
+          <select id="destSelect" aria-label="Destination"></select>
+          <button id="navBtn" class="btn primary wide">Navigate</button>
+          <p id="routeInfo" class="muted small"></p>
+        </section>
+
+        <!-- Manual / calibration controls -->
+        <section class="block" id="manualBlock" hidden>
+          <h2 id="manualTitle">Joystick</h2>
+          <div class="stick-row">
+            <div id="stick" class="stick" aria-label="Joystick" role="application">
+              <div id="knob" class="knob"></div>
+            </div>
+            <div class="stick-readout">
+              <div class="kv"><span>Steer</span><b id="stickX" class="num">0.00</b></div>
+              <div class="kv"><span>Throttle</span><b id="stickY" class="num">0.00</b></div>
+              <p class="muted small">Push up to drive forward, left/right to steer.</p>
+            </div>
+          </div>
+        </section>
+
+        <button id="estopBtn" class="btn danger wide">Emergency stop</button>
+
+        <!-- Telemetry -->
+        <section class="block">
+          <h2>Telemetry</h2>
+          <div class="grid">
+            <div class="cell"><span class="lbl">Speed</span><b class="num big" id="tSpeed">0.0</b><span class="unit">km/h</span></div>
+            <div class="cell"><span class="lbl">ETA</span><b class="num big" id="tEta">--:--</b><span class="unit" id="tDist"></span></div>
+            <div class="cell">
+              <span class="lbl">Heading</span>
+              <b class="num big" id="tHeading">0</b><span class="unit">&deg; <span id="tCompass">N</span></span>
+            </div>
+            <div class="cell">
+              <span class="lbl">Battery</span>
+              <b class="num big" id="tBatt">0</b><span class="unit">%</span>
+              <div class="bar"><i id="battBar"></i></div>
+            </div>
+          </div>
+          <div class="kv"><span>Position</span><b class="num" id="tPos">-</b></div>
+          <div class="kv"><span>Link</span><b class="num" id="tLink">-</b></div>
+        </section>
+
+        <!-- Lock -->
+        <section class="block" id="lockBlock">
+          <h2>Lock</h2>
+          <div class="lock-state" id="lockState" data-state="locked">Locked</div>
+          <div id="otpBox" hidden>
+            <p class="muted small">The vehicle has arrived. Enter the 6-digit code sent to your phone.</p>
+            <div id="smsBox" class="sms" hidden>
+              <span class="muted small">Simulated SMS (demo only)</span>
+              <div id="smsText"></div>
+            </div>
+            <form id="otpForm" class="otp-row">
+              <input id="otpInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+              <button class="btn primary" type="submit">Verify</button>
+            </form>
+            <button id="otpResend" class="linkbtn" type="button">Send a new code</button>
+            <p id="otpMsg" class="small" role="status"></p>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
